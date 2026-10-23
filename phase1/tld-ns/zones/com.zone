@@ -1,0 +1,7 @@
+$TTL 3600
+@       IN SOA  tld-ns.com. admin.tld-ns.com. ( 2026102301 3600 900 604800 3600 )
+        IN NS   tld-ns.com.
+tld-ns.com. IN A 172.16.3.20
+
+example.com. IN NS domain-ns.example.com.
+domain-ns.example.com. IN A 172.16.3.30

@@ -1,0 +1,7 @@
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bind9 bind9utils bind9-dnsutils dnsutils iproute2 iputils-ping tcpdump \
+    && rm -rf /var/lib/apt/lists/*
+# named runs as user 'bind'; let it read our mounted config/zone dirs
+RUN mkdir -p /etc/bind/zones && chown -R bind:bind /var/cache/bind /etc/bind/zones
+CMD ["named", "-g", "-u", "bind"]

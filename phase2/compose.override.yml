@@ -1,0 +1,16 @@
+# Run from phase2/ as:
+#   docker compose -f ../phase1/compose.yml -f compose.override.yml up -d --build
+# Adds the Phase 2 attacker to the resolver subnet.
+services:
+  attacker:
+    build: {context: ., dockerfile: Dockerfile.attacker}
+    container_name: attacker
+    cap_add: [NET_ADMIN, NET_RAW]
+    networks:
+      resolver-net: {ipv4_address: 172.16.2.100}
+    volumes: ["./:/attacker"]
+    command: ["sleep", "infinity"]
+
+networks:
+  resolver-net:
+    external: false

@@ -1,0 +1,99 @@
+name: cs6008-dns
+
+networks:
+  client-net:
+    driver: bridge
+    ipam:
+      config: [{subnet: 172.16.1.0/24}]
+  resolver-net:
+    driver: bridge
+    ipam:
+      config: [{subnet: 172.16.2.0/24}]
+  auth-net:
+    driver: bridge
+    ipam:
+      config: [{subnet: 172.16.3.0/24}]
+
+services:
+  client:
+    build: {context: ., dockerfile: Dockerfile.base}
+    container_name: client
+    cap_add: [NET_ADMIN]
+    networks:
+      client-net: {ipv4_address: 172.16.1.10}
+
+  webserver:
+    build: {context: ., dockerfile: Dockerfile.base}
+    container_name: webserver
+    cap_add: [NET_ADMIN]
+    networks:
+      client-net: {ipv4_address: 172.16.1.20}
+    volumes: ["./webserver-html:/srv/www:ro"]
+    command: ["python3", "-m", "http.server", "80", "--directory", "/srv/www"]
+
+  rogue-web:
+    build: {context: ., dockerfile: Dockerfile.base}
+    container_name: rogue-web
+    cap_add: [NET_ADMIN]
+    networks:
+      client-net: {ipv4_address: 172.16.1.30}
+    volumes: ["./rogue-html:/srv/www:ro"]
+    command: ["python3", "-m", "http.server", "80", "--directory", "/srv/www"]
+
+  edge-router:
+    build: {context: ., dockerfile: Dockerfile.base}
+    container_name: edge-router
+    cap_add: [NET_ADMIN]
+    sysctls: {net.ipv4.ip_forward: 1}
+    networks:
+      client-net: {ipv4_address: 172.16.1.2}
+      resolver-net: {ipv4_address: 172.16.2.2}
+
+  resolver:
+    build: {context: ., dockerfile: Dockerfile.dns}
+    container_name: resolver
+    cap_add: [NET_ADMIN]
+    networks:
+      resolver-net: {ipv4_address: 172.16.2.10}
+    volumes:
+      - ./resolver/named.conf:/etc/bind/named.conf:ro
+      - ./resolver/root.hints:/etc/bind/root.hints:ro
+
+  core-router:
+    build: {context: ., dockerfile: Dockerfile.base}
+    container_name: core-router
+    cap_add: [NET_ADMIN]
+    sysctls: {net.ipv4.ip_forward: 1}
+    networks:
+      resolver-net: {ipv4_address: 172.16.2.3}
+      auth-net: {ipv4_address: 172.16.3.3}
+
+  root-ns:
+    build: {context: ., dockerfile: Dockerfile.dns}
+    container_name: root-ns
+    cap_add: [NET_ADMIN]
+    networks:
+      auth-net: {ipv4_address: 172.16.3.10}
+    volumes:
+      - ./root-ns/named.conf:/etc/bind/named.conf:ro
+      - ./root-ns/zones:/etc/bind/zones:ro
+
+  tld-ns:
+    build: {context: ., dockerfile: Dockerfile.dns}
+    container_name: tld-ns
+    cap_add: [NET_ADMIN]
+    networks:
+      auth-net: {ipv4_address: 172.16.3.20}
+    volumes:
+      - ./tld-ns/named.conf:/etc/bind/named.conf:ro
+      - ./tld-ns/zones:/etc/bind/zones:ro
+
+  domain-ns:
+    build: {context: ., dockerfile: Dockerfile.dns}
+    container_name: domain-ns
+    cap_add: [NET_ADMIN]
+    networks:
+      auth-net: {ipv4_address: 172.16.3.30}
+    volumes:
+      - ./domain-ns/named.conf:/etc/bind/named.conf:ro
+      - ./domain-ns/zones:/etc/bind/zones:ro

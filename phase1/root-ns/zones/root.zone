@@ -1,0 +1,7 @@
+$TTL 3600
+@       IN SOA  root-ns. admin.root-ns. ( 2026102301 3600 900 604800 3600 )
+        IN NS   root-ns.
+root-ns. IN A   172.16.3.10
+
+com.    IN NS   tld-ns.com.
+tld-ns.com. IN A 172.16.3.20
